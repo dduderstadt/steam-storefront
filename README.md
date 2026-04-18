@@ -668,3 +668,317 @@ builder.Services.AddCors(opts =>
         .AllowAnyMethod()));
 ```
 The frontend origin is configurable via `appsettings.json` or environment variable. In Docker, the backend and frontend are on different ports — without CORS, the browser would block all API calls from the frontend.
+
+---
+
+### Frontend Notes
+
+| Page | Route | Rendering | Why |
+| --- | --- | --- | --- |
+| Storefront| `/` | SSR | Fast initial paint for the game grid |
+| Stats Dashboard | `/stats`| CSR | Data-heavy, interactive, loading state acceptable |
+| Game Detail | `/game/[appId] | SSR | Deep content, benefits from server render |
+
+  ### Tech Stack
+  - **Next.js 16** with **React 19** and **TypeScript**
+  - **Tailwind CSS 4** for styling
+  - App Router (file-system routing under `src/app/`)
+
+  ### Rendering Strategy
+
+  The storefront (`/`) is **Server-Side Rendered (SSR)**. The game grid is the
+  primary landing experience — SSR delivers content on first paint without a
+  loading spinner. Next.js Server Components can `async/await` fetch calls
+  directly; no `useEffect` needed.
+
+  The stats dashboard (`/stats`) is **Client-Side Rendered (CSR)**. It's a
+  data-heavy dashboard users navigate to deliberately — a loading state is
+  acceptable. Keeping it CSR avoids blocking the initial server render on
+  multiple aggregation queries.
+
+  ### `src/types/index.ts` — Shared TypeScript Types
+
+  Mirror the backend DTOs exactly. The frontend types are the contract between
+  the API and the UI. Any mismatch is caught at compile time rather than at
+  runtime.
+
+  `playtimeForever` and `playtimeTwoWeeks` arrive in **minutes** from the
+  backend (how Steam stores them). Formatting to hours happens in components,
+  not in the API layer.
+
+  `lastPlayed` and `headerImageUrl` are `string | null` — they are nullable on
+  the backend (not all games have been played or have Steam CDN images).
+
+  `LibraryQuery` mirrors the backend's `LibraryQueryParams` DTO — same field
+  names so the URL query string maps directly.
+
+  ### `src/lib/api.ts` — API Client
+
+  All `fetch` calls live in one module. Benefits:
+  - One place to update the base URL
+  - One place to add request headers (auth, etc.) in the future
+  - Components never construct URLs — they call typed functions
+
+  Uses `process.env.NEXT_PUBLIC_API_BASE_URL` (defaults to
+  `http://localhost:5000`). The `NEXT_PUBLIC_` prefix exposes the variable to
+  the browser bundle — required for CSR components that fetch client-side.
+  Server Components can also read it.
+
+  `cache: 'no-store'` on all fetches tells Next.js not to cache responses in
+  its server-side fetch cache. We want live data from the backend (which has
+  its own Redis caching layer) rather than stale Next.js-level caches.
+
+  ### `next.config.ts` — Image Domains
+
+  `next/image` requires explicit hostname allowlisting for remote images.
+  Steam header images come from `cdn.akamai.steamstatic.com`. Without this,
+  Next.js throws at build time if an `<Image>` component points to an
+  unlisted host.
+
+  ### `src/components/GameCard.tsx`
+
+  A Server Component (no `'use client'` directive) — it receives data as props
+  and renders HTML. No interactivity needed.
+
+  `formatPlaytime` converts minutes to hours locally in the component. The
+  backend stores playtime in minutes (Steam's format). Formatting is a
+  display concern — it belongs in the UI layer, not the API layer.
+
+  `next/image` requires a `fill` layout with a sized parent for remote images.
+  The `aspect-[460/215]` class matches Steam's header image aspect ratio exactly.
+  `sizes` tells the browser which image size to download based on viewport width,
+  avoiding downloading a full-size image on mobile.
+
+  Genres are capped at 3 with `.slice(0, 3)` — cards have limited space and
+  Steam games can have many genres. The full list is shown on the detail page.
+
+  `Link` from `next/link` handles client-side navigation without a full page
+  reload.
+
+    ### `src/components/GameGrid.tsx`
+
+  Thin wrapper — its only job is layout. Business logic (fetching, filtering,
+  pagination) lives in the page, not here. The component just maps a `GameDto[]`
+  to a grid of `GameCard` components.
+
+  `key={game.appId}` uses Steam's AppId as the React key. React uses keys to
+  track which list items changed between renders — a stable, unique ID like
+  AppId is better than an array index, which can shift when items are added
+  or removed.
+
+  The empty state is handled here rather than in the page so every consumer
+  gets consistent "no results" UI for free.
+
+   ### `src/components/FilterBar.tsx`
+
+  The first Client Component (`'use client'`). Server Components can't handle
+  browser events (`onChange`, `onClick`) or use hooks like `useRouter`. The
+  `'use client'` directive tells Next.js to ship this component's JavaScript
+  to the browser.
+
+  Filters are stored in the **URL query string** (`?genre=RPG&sort=playtime`),
+  not in React state. This is an intentional choice:
+
+  - The storefront page is SSR — it reads `searchParams` on the server to fetch
+    filtered data. If filters lived in client state, the server would never see
+    them.
+  - URL state is shareable and bookmarkable for free.
+  - Browser back/forward navigation works correctly.
+
+  `updateParam` always resets `page` back to 1 when a filter changes. Without
+  this, changing the genre filter while on page 3 would request page 3 of the
+  new results — which may not exist.
+
+  `useSearchParams` reads the current query string. `usePathname` gives the
+  current path so `router.push` reconstructs the full URL correctly regardless
+  of which page `FilterBar` is mounted on.
+
+  Let me know when done and we'll do Pagination — the last component before we get to the pages.
+
+  ### `src/components/Pagination.tsx`
+
+  Client Component for the same reason as `FilterBar` — it handles click events
+  and uses `useRouter` to navigate.
+
+  Receives `totalCount`, `page`, and `pageSize` as props from the server-rendered
+  page, which already knows these values from the API response. The component
+  derives `totalPages` from those props rather than fetching anything itself.
+
+  Returns `null` when there is only one page — no point rendering pagination
+  controls for a single page of results.
+
+  Same URL-based navigation pattern as `FilterBar`: `goToPage` preserves all
+  existing query params (filters, sort) and only updates `page`. This ensures
+  navigating to the next page doesn't reset the user's active filters.
+
+### `src/app/page.tsx` — Storefront (SSR)
+
+  An `async` Server Component — it `await`s both `searchParams` and the API
+  call before rendering. Next.js runs this on the server per request, so the
+  browser receives fully-rendered HTML with game data already present. No
+  loading spinner on first paint.
+
+  `searchParams` is a Promise in Next.js 16 and must be awaited before reading
+  its values (breaking change from Next.js 14).
+
+  Filters arrive via URL query string. The page reads them from `searchParams`,
+  builds a `LibraryQuery`, and passes it to `getLibrary`. Because filters live
+  in the URL, the server always has the full filter state when rendering —
+  no client-side coordination needed.
+
+  `FilterBar` and `Pagination` are Client Components wrapped in `<Suspense>`.
+  Next.js requires this when a Client Component uses `useSearchParams` inside
+  a Server Component tree — without the boundary, the build will throw.
+  `<Suspense>` with no `fallback` prop renders nothing while the client
+  hydrates, which is fine for controls that appear immediately.
+
+  `PAGE_SIZE` is defined as a module constant rather than a magic number. The
+  backend defaults to the same value — if you change one, change both.
+
+    ### `src/app/game/[appId]/page.tsx` — Game Detail (SSR)
+
+  `[appId]` is a dynamic route segment — Next.js maps `/game/123` to this page
+  with `params.appId === '123'`. The brackets in the folder name are the
+  Next.js file-system routing convention for dynamic segments.
+
+  `params` is a Promise in Next.js 16 and must be awaited, same as
+  `searchParams` on the storefront page.
+
+  `notFound()` from `next/navigation` triggers Next.js's built-in 404 page
+  when `getGame` returns `null` (backend returned a 404). This is cleaner than
+  a conditional render — it immediately stops execution and hands control to
+  the error boundary.
+
+  `priority` on the header image tells `next/image` to preload it. Used on
+  above-the-fold images that are the largest contentful element — improves
+  LCP (Largest Contentful Paint), a Core Web Vital.
+
+  `formatPlaytime` is duplicated from `GameCard` for now. If it needed to
+  change, that would be the signal to extract it to `src/lib/utils.ts`.
+  Premature extraction adds indirection without benefit.
+
+  Note: your types/index.ts will need shortDescription added — the backend's GameDetails has it but we didn't include it in GameDto initially. Add this to the       
+  GameDto interface:
+
+    ### `src/app/stats/page.tsx` — Stats Dashboard (CSR)
+
+  `'use client'` — this page runs entirely in the browser. It uses `useEffect`
+  and `useState`, which are not available in Server Components.
+
+  `useEffect` with an empty dependency array (`[]`) runs once after the
+  component mounts — equivalent to "on page load." It calls `getStats()` and
+  sets the result into state, triggering a re-render with the data.
+
+  Three render states are handled explicitly:
+  - `null` stats + no error → loading state
+  - error → error message
+  - stats present → full dashboard
+
+  `playtimeByGenre` arrives as a `Record<string, number>` (a plain object).
+  `Object.entries()` converts it to an array of `[genre, minutes]` pairs so
+  it can be sorted and sliced. Genres are sorted descending by playtime and
+  capped at 8 for readability.
+
+  The bar chart is pure CSS — no charting library needed for this use case.
+  Each bar's width is calculated as a percentage of the top genre's playtime,
+  making the widest bar always 100% and all others relative to it.
+
+### `src/app/stats/page.tsx` — Stats Dashboard (CSR)
+
+  `'use client'` — this page runs entirely in the browser. It uses `useEffect`
+  and `useState`, which are not available in Server Components.
+
+  `useEffect` with an empty dependency array (`[]`) runs once after the
+  component mounts — equivalent to "on page load." It calls `getStats()` and
+  sets the result into state, triggering a re-render with the data.
+
+  Three render states are handled explicitly:
+  - `null` stats + no error → loading state
+  - error → error message
+  - stats present → full dashboard
+
+  `playtimeByGenre` arrives as a `Record<string, number>` (a plain object).
+  `Object.entries()` converts it to an array of `[genre, minutes]` pairs so
+  it can be sorted and sliced. Genres are sorted descending by playtime and
+  capped at 8 for readability.
+
+  The bar chart is pure CSS — no charting library needed for this use case.
+  Each bar's width is calculated as a percentage of the top genre's playtime,
+  making the widest bar always 100% and all others relative to it.
+
+---
+
+### Data Flow - Storefront Page (/)
+
+URL: `/?genre=RPG&sort=playtime&page=2`
+
+`page.tsx` (server)
+- reads `searchParams` -> `{ genre: 'RPG', sort: 'playtime', page: '2'}`
+- calls `getLibrary({ genre: 'RPG', sort: 'playtime', page: '2' })`
+- `api.ts` builds URL -> GET `/api/v1/library?genre=RPG&sort=playtime&page=2`
+- backend filters + paginates -> returns `PagedResult<GameDto>`
+- `page.tsx` passes `result.items` to `<GameGrid games={result.items} />`
+- GameGrid maps each GameDto -> `<GameCard game={game} />`
+- browser receives fully rendered HTML - no loading state
+
+The key insight: the URL is the source of truth for filters. When you change the genre input in `FilterBar`, it doesn't update React state - it updates the URL. That triggers a new server render with the new `searchParams`, which fetches fresh data
+
+---
+
+ ### Data Flow — Stats Page (/stats)
+
+  CSR is different — the server sends an empty shell, the browser fetches data itself:
+
+  browser navigates to /stats
+           ↓
+    server sends `page.tsx` HTML with "Loading stats..." showing
+           ↓
+    browser runs the JavaScript
+           ↓
+    `useEffect` fires → calls `getStats()`
+           ↓
+    GET `/api/v1/stats` → returns `StatsDto`
+           ↓
+    `setStats(data)` → triggers re-render with real data
+           ↓
+    dashboard renders
+
+---
+
+### `useRouter` — What It Does
+
+  `useRouter` gives you programmatic navigation — the ability to change the URL
+  from JavaScript code instead of the user clicking a `<Link>`.
+
+  In `FilterBar`, when you type in the genre input:
+
+  ```typescript
+  // user types "RPG" in the genre box
+  onChange={(e) => updateParam('genre', e.target.value)}
+
+  // updateParam builds the new URL and navigates to it
+  function updateParam(key: string, value: string) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(key, value);          // adds genre=RPG
+      params.delete('page');           // resets to page 1
+      router.push(`${pathname}?${params.toString()}`);
+      // navigates to /?genre=RPG  ← triggers a new server render
+  }
+
+  `router.push` is like clicking a link — it changes the URL and re-renders the
+  page without a full browser reload. That new URL hits `page.ts` on the server
+  with the updated `searchParams`, which fetches fresh filtered data.
+
+  `useSearchParams` reads the current query string so `updateParam` can preserve
+  existing filters when adding a new one. Without it, typing in the genre box
+  would wipe out any active sort or pagination.
+
+  `usePathname` returns the current path (e.g. /) so the reconstructed URL
+  stays on the same page regardless of where `FilterBar` is mounted.
+  ```
+  ---
+
+### `src/app/layout.tsx` - Root Layout
+Wraps every page in the app. Next.js renders this file as the outer shell around each page's `children` - nav defined here appears on `/`, `/stats`, and `/game/[appId]` without repeating it in each page file.
+
+`metadata` exported from layout sets the default `<title>` and `<meta description>` for the entire app. Individual pages can override it by exporting their own `metadata` object.

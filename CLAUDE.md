@@ -109,6 +109,10 @@ Filter logic (`?genre=RPG&minPlaytime=10&sort=playtime`) lives in `LibraryServic
 - **Integration tests**: Controllers via `WebApplicationFactory` hitting a real test database
 - Test fixtures live in `Tests/Fixtures/`
 
+## Code Style
+
+- All `if` statements must use curly braces, even single-line bodies.
+
 ## Key Constraints
 
 - `STEAM_API_KEY` and `STEAM_ID` (owner's 64-bit Steam ID) are env vars — never hardcoded.
