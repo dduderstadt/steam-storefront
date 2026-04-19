@@ -1,6 +1,8 @@
 import type { GameDto, PagedResult, StatsDto, LibraryQuery } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
+const BASE_URL = typeof window === 'undefined'
+    ? (process.env.API_BASE_URL || 'http://localhost:5000')
+    : (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000');
 
 export async function getLibrary(query: LibraryQuery = {}): Promise<PagedResult<GameDto>> {
     const params = new URLSearchParams();
