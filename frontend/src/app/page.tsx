@@ -4,6 +4,7 @@ import FilterBar from '@/components/FilterBar';
 import Pagination from '@/components/Pagination';
 
 const PAGE_SIZE = 24;
+export const dynamic = 'force-dynamic';
 
 export default async function StorefrontPage({
   searchParams,

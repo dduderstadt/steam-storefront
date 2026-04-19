@@ -1,17 +1,15 @@
 import type { NextConfig } from "next";
-
 const nextConfig: NextConfig = {
-  /* config options here */
   output: 'standalone',
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'cdn.akamai.steamstatic.com'
+        hostname: '*steamstatic.com',
       },
       {
         protocol: 'https',
-        hostname: 'shared.cloudflare.steamstatic.com'
+        hostname: '*steamstatic.com',
       },
     ],
   },
