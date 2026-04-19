@@ -1,6 +1,12 @@
 import type { GameDto, PagedResult, StatsDto, LibraryQuery } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
+/**typeof window == 'undefined' is true on the server (Node.js has no window),
+ * false in the browser. So Server Components use API_BASE_URL, Client Components use
+ * NEXT_PUBLIC_API_BASE_URL
+ */
+const BASE_URL = typeof window == 'undefined'
+    ? (process.env.API_BASE_URL ?? 'http://localhost:5000')
+    : (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5000')
 
 export async function getLibrary(query: LibraryQuery = {}): Promise<PagedResult<GameDto>> {
     const params = new URLSearchParams();

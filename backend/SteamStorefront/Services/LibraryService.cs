@@ -25,16 +25,16 @@ public class LibraryService(AppDbContext db, ICacheService cache, IConfiguration
 
         q = query.Sort switch
         {
-            "playtime"   => q.OrderByDescending(g => g.PlaytimeForever),
+            "playtime" => q.OrderByDescending(g => g.PlaytimeForever),
             "lastPlayed" => q.OrderByDescending(g => g.LastPlayed),
-            _            => q.OrderBy(g => g.Name)
+            _ => q.OrderBy(g => g.Name)
         };
 
         var totalCount = await q.CountAsync(ct);
         var items = await q
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Select(g => new GameDto(g.AppId, g.Name, g.HeaderImageUrl, g.Genres, g.PlaytimeForever, g.PlaytimeTwoWeeks, g.LastPlayed))
+            .Select(g => new GameDto(g.AppId, g.Name, g.Description, g.HeaderImageUrl, g.Genres, g.PlaytimeForever, g.PlaytimeTwoWeeks, g.LastPlayed))
             .ToListAsync(ct);
 
         var result = new PagedResult<GameDto>(items, totalCount, query.Page, query.PageSize);
@@ -46,6 +46,6 @@ public class LibraryService(AppDbContext db, ICacheService cache, IConfiguration
     {
         var game = await db.Games.FindAsync([appId], ct);
         if (game is null) return null;
-        return new GameDto(game.AppId, game.Name, game.HeaderImageUrl, game.Genres, game.PlaytimeForever, game.PlaytimeTwoWeeks, game.LastPlayed);
+        return new GameDto(game.AppId, game.Name, game.Description, game.HeaderImageUrl, game.Genres, game.PlaytimeForever, game.PlaytimeTwoWeeks, game.LastPlayed);
     }
 }

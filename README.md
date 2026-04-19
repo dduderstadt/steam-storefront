@@ -982,3 +982,87 @@ The key insight: the URL is the source of truth for filters. When you change the
 Wraps every page in the app. Next.js renders this file as the outer shell around each page's `children` - nav defined here appears on `/`, `/stats`, and `/game/[appId]` without repeating it in each page file.
 
 `metadata` exported from layout sets the default `<title>` and `<meta description>` for the entire app. Individual pages can override it by exporting their own `metadata` object.
+
+### Docker
+| Caller | Where it runs | How it reaches the backend |
+| --- | --- | --- |
+| Server Components (SSR) | Inside the frontend container | Internal Docker network: `http://backend:8080` |
+| Client Components (CSR) | In the user's browser | Exposed port: `http://localhost:5000` |
+
+These need different URLs. We solve it in `api.ts` with a `typeof window` check - server-side uses one env var, client-side uses another.
+
+---
+
+● ## Docker
+
+  The full stack runs with a single command from the project root:
+
+  ```bash
+  cp .env.example .env   # fill in STEAM_API_KEY, STEAM_ID, POSTGRES_PASSWORD
+  docker compose up --build
+
+  Then open http://localhost:3000.
+
+  Services
+
+  ┌────────────┬─────────────────┬───────────────┐
+  │  Service   │      Image      │ Exposed Port  │
+  ├────────────┼─────────────────┼───────────────┤
+  │ PostgreSQL │ postgres:17     │ internal only │
+  ├────────────┼─────────────────┼───────────────┤
+  │ Redis      │ redis:7-alpine  │ internal only │
+  ├────────────┼─────────────────┼───────────────┤
+  │ Backend    │ ASP.NET Core 10 │ 5000          │
+  ├────────────┼─────────────────┼───────────────┤
+  │ Frontend   │ Next.js 16      │ 3000          │
+  └────────────┴─────────────────┴───────────────┘
+
+  Multi-Stage Builds
+
+  Both Dockerfiles use multi-stage builds to keep the final image small.
+
+  Backend: The sdk image compiles the app; only the aspnet runtime image
+  ships. The SDK (~900MB) is discarded — the runtime image (~220MB) is all that
+  runs in production.
+
+  Frontend: Dependencies are installed in a deps stage, the app is built
+  in a build stage, and only the Next.js standalone output is copied into the
+  runtime stage. output: 'standalone' in next.config.ts tells Next.js to
+  bundle only what's needed to run the app, excluding node_modules.
+
+  The SSR/CSR URL Problem
+
+  Server Components (SSR) run inside the frontend Docker container and reach
+  the backend over the internal Docker network (http://backend:8080).
+  Client Components (CSR) run in the user's browser and reach the backend
+  through the exposed port (http://localhost:5000).
+
+  api.ts resolves this with a typeof window check:
+
+  const BASE_URL = typeof window === 'undefined'
+      ? (process.env.API_BASE_URL ?? 'http://localhost:5000')
+      : (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5000');
+
+  NEXT_PUBLIC_API_BASE_URL is baked into the client bundle at build time
+  (Next.js embeds NEXT_PUBLIC_ vars during npm run build). API_BASE_URL
+  is a runtime environment variable — it's never sent to the browser.
+
+  Health Checks
+
+  postgres and redis expose health checks. The backend service uses
+  condition: service_healthy so it won't start until both dependencies are
+  actually ready to accept connections — not just started.
+
+  Environment Variables
+
+  Copy .env.example to .env and fill in three values:
+  - STEAM_API_KEY — from your Steam developer account
+  - STEAM_ID — your 64-bit Steam ID (steamid.io can look this up)
+  - POSTGRES_PASSWORD — any strong password, only used internally
+
+  The .env file is gitignored. Never commit it.
+
+  ASP.NET Core reads nested config keys from environment variables using
+  double-underscore as the separator: ConnectionStrings__Default maps to
+  ConnectionStrings.Default in appsettings.json.
+  ```
