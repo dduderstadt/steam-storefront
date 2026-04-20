@@ -2,6 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import type { GameDto } from "@/types";
 
+/**
+ * Steam's API returns playtime in minutes, so to display in a more user-friendly format (e.g. hours),
+ * we can convert minutes to hours and format it accordingly.
+ * @param minutes The total playtime in minutes from the Steam API.
+ * @returns The formatted playtime string.
+ */
 function formatPlaytime(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     if (hours < 1) {
@@ -10,10 +16,17 @@ function formatPlaytime(minutes: number): string {
     return `${hours.toLocaleString()}h`;
 }
 
+/**
+ * Renders a pure-presentational game card component.
+ * The card has no state, no data fetching, and no side effects. It simply takes in game data as props and renders it.
+ * @param game The GameDto to display in the card.
+ * @returns A clickable game card linking to the detail page.
+ */
 export default function GameCard({ game }: { game: GameDto }) {
     return (
         <Link href={`/game/${game.appId}`} className="group block rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400     
   dark:hover:border-zinc-600 transition-colors">
+            {/* `aspect-[460/215]` is Steam's exact header image ratio. */}
             <div className="relative aspect-[460/215] bg-zinc-100 dark:bg-zinc-900">
                 {game.headerImageUrl ? (
                     <Image
@@ -37,6 +50,7 @@ export default function GameCard({ game }: { game: GameDto }) {
                     {formatPlaytime(game.playtimeForever)} played
                 </p>
                 <div className="flex flex-wrap gap-1 mt-2">
+                    {/* Cards have limited vertical space; showing all genres would break the grid layout */}
                     {game.genres.slice(0, 3).map((genre) => (
                         <span key={genre} className="text-xs px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                             {genre}
