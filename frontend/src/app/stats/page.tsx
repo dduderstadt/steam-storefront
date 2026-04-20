@@ -70,11 +70,11 @@ export default function StatsPage() {
                     Most Played
                 </h2>
                 <ol className="space-y-2">
-                    {stats.mostPlayedGames.map((game, i) => (
+                    {stats.topGames.map((game, i) => (
                         <li key={game.appId} className="flex items-center gap-3 text-sm">
                             <span className="w-5 text-zinc-400 text-right">{i + 1}.</span>
                             <span className="flex-1 text-zinc-900 dark:text-zinc-100 truncate">{game.name}</span>
-                            <span className="text-zinc-500">{formatPlaytime(game.playtimeForever)}</span>
+                            <span className="text-zinc-500">{formatPlaytime(game.playtimeMinutes)}</span>
                         </li>
                     ))}
                 </ol>

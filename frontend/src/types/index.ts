@@ -1,3 +1,11 @@
+/**
+ * Why a dedicated types file - single source of truth for the API contract between frontend and backend.
+ * If the backend DTO changes, you update one file and TypeScript flags every broken consumer. */
+
+/** Data transfer object for a game
+ * headerImageUrl, lastPlayed, and shortDescription are nullable beccause not every game has been played,
+ * has an image, or has a description in Steam's API.
+*/
 export interface GameDto {
     appId: number;
     name: string;
@@ -19,13 +27,13 @@ export interface PagedResult<T> {
 export interface GamePlaytimeStat {
     appId: number;
     name: string;
-    playtimeForever: number;
+    playtimeMinutes: number;
 }
 
 export interface StatsDto {
     totalGames: number;
     totalPlaytimeMinutes: number;
-    mostPlayedGames: GamePlaytimeStat[];
+    topGames: GamePlaytimeStat[];
     playtimeByGenre: Record<string, number>;
     lastSyncedAt: string;
 }
