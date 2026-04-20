@@ -13,17 +13,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Next.js reads this object and injects the <title> and <meta name="description"> tags into the <head> automatically. No manual <head> needed.
 export const metadata: Metadata = {
   title: "Steam Library",
   description: "A personal Steam library storefront.",
 };
 
+/**
+ * RootLayout wraps every page in the app. The children prop is whatever page is currently active.
+ * The nav bar here renders on every page without any duplication in individual page files.
+ * @param children Whatever page is currently active - passed in by Next.js automatically. This is the main content of each page, rendered below the nav bar.
+ * @returns The full HTML structure of the page, including the <html> and <body> tags, with a nav bar and the active page content. The fonts are loaded here and applied globally via CSS variables.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
+    //Next.js loads these fonts from Google at build time and injects them as CSS custom properties (--font-geist-sans, --font-geist-mono)
+    // The variables are then applied to the <html> element so Tailwind can use them via font-sans and font-mono.
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full

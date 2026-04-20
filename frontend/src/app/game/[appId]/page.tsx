@@ -1,7 +1,14 @@
-import { notFound } from 'next/navigation'; import Image from 'next/image';
+import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 import { getGame } from '@/lib/api';
 
+// TODO: extract to a shared utility (lib/utils.ts) - duplicated from GameCard.tsx
+/**
+ * Formats playtime in minutes into a human-readable string.
+ * @param minutes The playtime in minutes.
+ * @returns The formatted playtime string.
+ */
 function formatPlaytime(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     if (hours < 1) {
@@ -10,6 +17,13 @@ function formatPlaytime(minutes: number): string {
     return `${hours.toLocaleString()}h`;
 }
 
+/**
+ * SSR detail page for a single game. Fetches the game data server-side based on the `appId` from the URL, and renders a detailed view of the game.
+ * If no game is found for the given `appId`, it calls `notFound()` to render the 404 page.
+ * Priority on the Image preloads it since it's above the fold.
+ * @param params Next.js route params as a Promise - must be awaited to extract the `appId`.
+ * @returns A full-page JSX element with game details, or triggers a 404 if the game is not found.
+ */
 export default async function GameDetailPage({
     params,
 }: {
@@ -19,7 +33,7 @@ export default async function GameDetailPage({
     const game = await getGame(Number(appId));
 
     if (!game) {
-        notFound();
+        notFound(); // Renders the nearest not-found.tsx; falls back to Next.js default 404 if none exists.
     }
 
     return (

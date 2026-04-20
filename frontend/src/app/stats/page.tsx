@@ -3,15 +3,30 @@ import { useEffect, useState } from 'react';
 import { getStats } from '@/lib/api';
 import type { StatsDto } from '@/types';
 
+// TODO: extract to lib/utils.ts - duplicated from GameCard.tsx and game/[appId]/page.tsx
+/**
+ * Formats playtime in minutes into a human-readable string.
+ * @param minutes The playtime in minutes.
+ * @returns The formatted playtime string in hours - always.
+ */
 function formatPlaytime(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     return `${hours.toLocaleString()}h`;
 }
 
+/**
+ * 'use client' makes this a CSR page (intentional to the SSR storefront).
+ * Stats are data-heavy and don't need to be in the initial HTML - fetching client-side after load is fine.
+ * Three render states: loading, error, and data.
+ * @returns A JSX element representing the stats page, which shows library statistics and visualizations of playtime by genre and top games.
+ */
 export default function StatsPage() {
     const [stats, setStats] = useState<StatsDto | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+
+    // The empty dependency array means this runs once after the first render (on mount).
+    // Without it, it would re-run on every render.
     useEffect(() => {
         getStats()
             .then(setStats)
@@ -34,10 +49,13 @@ export default function StatsPage() {
         );
     }
 
+    // topGenres sorts the genre map by playtime descending and takes the top 8.
     const topGenres = Object.entries(stats.playtimeByGenre)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 8);
 
+    // maxGenreMinutes is the largest value - used to calculate bar widths as a percentage so the top genre always fills 100% width
+    // and others scale relative to it.
     const maxGenreMinutes = topGenres[0]?.[1] ?? 1;
 
     return (
@@ -91,6 +109,7 @@ export default function StatsPage() {
                                 <span className="text-zinc-500">{formatPlaytime(minutes)}</span>
                             </div>
                             <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
+                                {/* Width is a percentage of the top genre's playtime, so the longest bar always fills the full width */}
                                 <div
                                     className="h-2 rounded-full bg-blue-500"
                                     style={{ width: `${(minutes / maxGenreMinutes) * 100}%` }}
