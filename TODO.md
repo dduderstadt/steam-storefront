@@ -17,20 +17,20 @@ Create reusable primitives in `frontend/src/components/ui/`:
 
 ## Error Handling
 
-### Error & Not-Found Pages (Frontend)
-Next.js App Router supports `error.tsx` and `not-found.tsx` conventions, but neither exists. Add:
-- `frontend/src/app/error.tsx` — error boundary for unexpected failures with a user-facing recovery UI
-- `frontend/src/app/not-found.tsx` — styled 404 page
+### ~~Error & Not-Found Pages (Frontend)~~ ✓ Done
+~~Next.js App Router supports `error.tsx` and `not-found.tsx` conventions, but neither exists. Add:~~
+- ~~`frontend/src/app/error.tsx` — error boundary for unexpected failures with a user-facing recovery UI~~
+- ~~`frontend/src/app/not-found.tsx` — styled 404 page~~
 
 ### Global Exception Middleware (Backend)
 Controllers return ad-hoc status codes with no standardized error response shape. Add a global exception-handling middleware in the backend that catches unhandled exceptions and returns a consistent JSON error body (e.g. `{ "error": "...", "status": 500 }`).
 
 ## Loading States
 
-### Skeleton Loaders
-The stats page renders plain "Loading stats..." text and no `loading.tsx` exists for the app directory. Add:
-- `frontend/src/app/loading.tsx` — top-level loading fallback used by Next.js Suspense
-- Skeleton loader components for the game grid (home page) and the stats dashboard
+### ~~Skeleton Loaders~~ ✓ Done
+~~The stats page renders plain "Loading stats..." text and no `loading.tsx` exists for the app directory. Add:~~
+- ~~`frontend/src/app/loading.tsx` — top-level loading fallback used by Next.js Suspense~~
+- ~~Skeleton loader components for the game grid (home page) and the stats dashboard~~
 
 ## Testing
 
