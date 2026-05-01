@@ -3,23 +3,34 @@ using System.ComponentModel.DataAnnotations;
 namespace SteamStorefront.Models;
 
 /// <summary>
-/// A class that represents a Game entry
+/// The EF Core entity for the Games table, one row per game in the Steam library, populated by SyncService.
 /// </summary>
 public class Game
 {
     /// <summary>
     /// Steam's own ID for the game, used as the PK instead of a generated int.
-    /// We own this key becaue Steam owns the canonical ID.
+    /// We own this key because Steam owns the canonical ID.
     /// </summary>
     [Key]
     public int AppId { get; set; }
 
+    /// <summary>
+    /// [Required] prevents null in the DB column and [MaxLength(500)] maps to varchar(500)
+    /// </summary>
     [Required]
     [MaxLength(500)]
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Nullable because store details aren't fetched until the game's first sync pass.
+    /// </summary>
     public string? Description { get; set; }
+
+    /// <summary>
+    /// Nullable because store details aren't fetched until the game's first sync pass.
+    /// </summary>
     public string? HeaderImageUrl { get; set; }
+
     /// <summary>
     /// Stored as a Postgres text[] array column. This lets us filter by
     /// genre with a native array `Contains` query instead of a join table.
@@ -57,13 +68,17 @@ public class Game
     /// happens in the frontend.
     /// </summary>
     public int PlaytimeTwoWeeks { get; set; }
+
+    /// <summary>
+    /// Nullable because games with zero playtime have never been launched and Steam returns null.
+    /// </summary>
     public DateTime? LastPlayed { get; set; }
     /// <summary>
-    /// Lets us know when we first saw the game and when we last updated it.
+    /// Lets us know when we first saw the game and when we last updated it. Set once on insert.
     /// </summary>
     public DateTime FirstSyncedAt { get; set; }
     /// <summary>
-    /// Lets us know when we first saw the game and when we last updated it.
+    /// Lets us know when we first saw the game and when we last updated it. Updated on every sync.
     /// </summary>
     public DateTime LastSyncedAt { get; set; }
 }
