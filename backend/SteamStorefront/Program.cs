@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using SteamStorefront.Data;
 using SteamStorefront.Jobs;
+using SteamStorefront.Middleware;
 using SteamStorefront.Services;
 using SteamStorefront.Steam;
 
@@ -54,6 +55,9 @@ using (var scope = app.Services.CreateScope())
         db.Database.EnsureCreated();
     }
 }
+
+// Must be first — wraps the entire pipeline so no exception can escape unhandled.
+app.UseMiddleware<ExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
     app.MapOpenApi();

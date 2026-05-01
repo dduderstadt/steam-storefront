@@ -22,8 +22,8 @@ Create reusable primitives in `frontend/src/components/ui/`:
 - ~~`frontend/src/app/error.tsx` — error boundary for unexpected failures with a user-facing recovery UI~~
 - ~~`frontend/src/app/not-found.tsx` — styled 404 page~~
 
-### Global Exception Middleware (Backend)
-Controllers return ad-hoc status codes with no standardized error response shape. Add a global exception-handling middleware in the backend that catches unhandled exceptions and returns a consistent JSON error body (e.g. `{ "error": "...", "status": 500 }`).
+### ~~Global Exception Middleware (Backend)~~ ✓ Done
+~~Controllers return ad-hoc status codes with no standardized error response shape. Add a global exception-handling middleware in the backend that catches unhandled exceptions and returns a consistent JSON error body (e.g. `{ "error": "...", "status": 500 }`).~~
 
 ## Loading States
 
