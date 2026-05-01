@@ -6,7 +6,7 @@ namespace SteamStorefront.Models.Dtos;
 /// 
 /// /api/v1/library?genre=Action&minPlaytime=10&sort=playtime&page=2
 /// ASP.NET Core automatically maps those query string values onto this class via
-/// [FromQuery] in the controller — you don't write any parsing code yourself.move
+/// [FromQuery] in the controller — you don't write any parsing code yourself.
 /// </summary>
 public class LibraryQueryParams
 {
@@ -18,7 +18,10 @@ public class LibraryQueryParams
     /// LibraryService — so if it ever needs to change, there's only one place to update.
     /// </summary>
     public int? MinPlaytime { get; set; }
+    /// <summary>Accepted values: "name", "playtime", "lastPlayed". Defaults to "name".</summary>
     public string Sort { get; set; } = "name";
+    /// <summary>1-indexed. Defaults to the first page.</summary>
     public int Page { get; set; } = 1;
+    /// <summary>Number of items per page. Defaults to 50; the storefront overrides this to 24.</summary>
     public int PageSize { get; set; } = 50;
 }
