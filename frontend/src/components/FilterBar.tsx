@@ -1,12 +1,17 @@
 'use client';
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import GenreAutocomplete from './GenreAutocomplete';
 
 const SORT_OPTIONS = [
     { value: 'playtime', label: 'Most Played' },
     { value: 'name', label: 'Name (A-Z)' },
     { value: 'lastPlayed', label: 'Recently Played' },
 ];
+
+interface FilterBarProps {
+    genres: string[];
+}
 
 /**
  * Filters aren't stored in React state (`useState`) - they live in the URL query string.
@@ -17,7 +22,7 @@ const SORT_OPTIONS = [
  * All hooks that depend on the browser environment. Server components cannot use these hooks.
  * @returns A JSX element representing the filter bar.
  */
-export default function FilterBar() {
+export default function FilterBar({ genres }: FilterBarProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -42,15 +47,12 @@ export default function FilterBar() {
 
     return (
         <div className="flex flex-wrap gap-3 items-center">
-            {/* Genre and minPlaytime inputs use `defaultValue` (uncontrolled) which lets the user type freely without re-rendering on every keystroke */}
-            <input
-                type="text"
-                placeholder="Filter by genre..."
-                defaultValue={searchParams.get('genre') ?? ''}
-                onChange={(e) => updateParam('genre', e.target.value)}
-                className="border border-zinc-300 dark:border-zinc-700 rounded px-3 py-1.5 text-sm bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100      
-  placeholder:text-zinc-400"
+            <GenreAutocomplete
+                genres={genres}
+                value={searchParams.get('genre') ?? ''}
+                onChange={(value) => updateParam('genre', value)}
             />
+            {/* minPlaytime inputs use `defaultValue` (uncontrolled) which lets the user type freely without re-rendering on every keystroke */}
             <input
                 type="number"
                 placeholder="Min hours played..."

@@ -63,4 +63,17 @@ public class LibraryService(AppDbContext db, ICacheService cache, IConfiguration
         if (game is null) return null;
         return new GameDto(game.AppId, game.Name, game.Description, game.HeaderImageUrl, game.Genres, game.PlaytimeForever, game.PlaytimeTwoWeeks, game.LastPlayed);
     }
+
+    /// <summary>
+    /// Queries the database for all unique genres across all games.
+    /// </summary>
+    /// <returns>A list of all unique genres ordered by genre.</returns>
+    public async Task<IReadOnlyList<string>> GetGenresAsync(CancellationToken ct = default)
+    {
+        return await db.Games
+            .SelectMany(g => g.Genres)
+            .Distinct()
+            .OrderBy(g => g)
+            .ToListAsync(ct);
+    }
 }

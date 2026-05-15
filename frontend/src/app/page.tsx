@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getLibrary } from '@/lib/api';
+import { getLibrary, getGenres } from '@/lib/api';
 import GameGrid from '@/components/GameGrid';
 import FilterBar from '@/components/FilterBar';
 import Pagination from '@/components/Pagination';
@@ -34,7 +34,7 @@ export default async function StorefrontPage({
     pageSize: PAGE_SIZE,
   };
 
-  const result = await getLibrary(query);
+  const [result, genres] = await Promise.all([getLibrary(query), getGenres()]); // Fetch in parallel to avoid sequential waterfall
 
   return (
     <main className="max-w-7xl mx-auto px-4 py-8">
@@ -49,7 +49,7 @@ export default async function StorefrontPage({
       <div className="mb-6">
         {/* Required by FilterBar, Pagination, and  useSearchParams ('use client') when used inside a Server Component page */}
         <Suspense>
-          <FilterBar />
+          <FilterBar genres={genres} />
         </Suspense>
       </div>
       <GameGrid games={result.items} />

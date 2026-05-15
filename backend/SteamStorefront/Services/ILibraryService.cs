@@ -19,4 +19,11 @@ public interface ILibraryService
     /// Returning null (rather than throwing) lets the controller call NotFound() cleanly.
     /// </summary>
     Task<GameDto?> GetGameAsync(int appId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns a list of all unique genres in the library.
+    /// Used to populate auto-complete for genre filter.
+    /// </summary>
+    /// <returns>A list of all unique genres.</returns>
+    Task<IReadOnlyList<string>> GetGenresAsync(CancellationToken ct = default);
 }

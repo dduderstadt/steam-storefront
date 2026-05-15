@@ -86,3 +86,15 @@ export async function getStats(): Promise<StatsDto> {
     }
     return res.json();
 }
+
+/**
+ * Fetches the list of all unique genres in the library from the backend.
+ * @returns A list of all unique genres in the library, as JSON.
+ */
+export async function getGenres(): Promise<string[]> {
+    const resp = await fetch(`${BASE_URL}/api/v1/library/genres`, { cache: 'no-store' });
+    if (!resp.ok) {
+        throw new Error('Failed to fetch genres');
+    }
+    return resp.json();
+}

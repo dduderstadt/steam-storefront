@@ -38,4 +38,16 @@ public class LibraryController(ILibraryService library) : ControllerBase
         if (game is null) { return NotFound(); }
         return Ok(game);
     }
+
+    /// <summary>
+    /// GET /api/v1/library/genres
+    /// Returns a list of all unique genres in the library. Used to populate auto-complete for
+    /// the genre filter.
+    /// </summary>
+    [HttpGet("genres")]
+    public async Task<IActionResult> GetGenres(CancellationToken ct)
+    {
+        var genres = await library.GetGenresAsync(ct);
+        return Ok(genres);
+    }
 }
