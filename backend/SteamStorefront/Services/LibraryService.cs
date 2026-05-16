@@ -21,14 +21,17 @@ public class LibraryService(AppDbContext db, ICacheService cache, IConfiguration
     /// </summary>
     public async Task<PagedResult<GameDto>> GetGamesAsync(LibraryQueryParams query, CancellationToken ct = default)
     {
-        var cacheKey = $"steam:{_steamId}:library:{query.Genre}:{query.MinPlaytime}:{query.Sort}:{query.Page}:{query.PageSize}";
+        var cacheKey = $"steam:{_steamId}:library:{string.Join(",", query.Genres)}:{query.MinPlaytime}:{query.Sort}:{query.Page}:{query.PageSize}";
         var cached = await cache.GetAsync<PagedResult<GameDto>>(cacheKey, ct);
         if (cached is not null) return cached;
 
         var q = db.Games.AsQueryable();
 
-        if (!string.IsNullOrEmpty(query.Genre))
-            q = q.Where(g => g.Genres.Contains(query.Genre));
+        if (query.Genres.Count > 0)
+        {
+            var genres = query.Genres;
+            q = q.Where(g => g.Genres.Any(genre => genres.Contains(genre)));
+        }
 
         // MinPlaytime arrives in hours from the frontend; convert to minutes for the DB query.
         if (query.MinPlaytime.HasValue)

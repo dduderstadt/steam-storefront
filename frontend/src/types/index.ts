@@ -64,7 +64,7 @@ export interface StatsDto {
  * and passes to getGames(). All fields are optional because any combination is valid (no filters = return all games).
  */
 export interface LibraryQuery {
-    genre?: string;
+    genres?: string[];
     minPlaytime?: number;
     sort?: 'name' | 'playtime' | 'lastPlayed';
     page?: number;

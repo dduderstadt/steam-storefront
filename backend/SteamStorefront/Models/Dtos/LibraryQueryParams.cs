@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Mvc;
+
 namespace SteamStorefront.Models.Dtos;
 
 /// <summary>
@@ -24,4 +26,11 @@ public class LibraryQueryParams
     public int Page { get; set; } = 1;
     /// <summary>Number of items per page. Defaults to 50; the storefront overrides this to 24.</summary>
     public int PageSize { get; set; } = 50;
+    /// <summary>
+    /// One or more genres to filter by. When multiple are provided, only
+    /// games that have at least one matching genre are returned. ASP.NET Core binds
+    /// repeated query params (?genre=Action&genre=RPG) to a List automatically.
+    /// </summary>
+    [FromQuery(Name = "genre")]
+    public List<string> Genres { get; set; } = [];
 }

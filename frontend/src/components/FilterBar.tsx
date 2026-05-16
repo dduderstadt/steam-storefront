@@ -45,12 +45,25 @@ export default function FilterBar({ genres }: FilterBarProps) {
         router.push(`${pathname}?${params.toString()}`);
     }
 
+    /**
+     * Reads the current query string, updates the URL with the new genre selection.
+     */
+    function updateGenres(selected: string[]) {
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete('genre');
+        selected.forEach(g => params.append('genre', g));
+        params.delete('page');
+        router.push(`${pathname}?${params.toString()}`);
+    }
+
+    const selectedGenres = searchParams.getAll('genre');
+
     return (
         <div className="flex flex-wrap gap-3 items-center">
             <GenreAutocomplete
                 genres={genres}
-                value={searchParams.get('genre') ?? ''}
-                onChange={(value) => updateParam('genre', value)}
+                selected={selectedGenres}
+                onChange={updateGenres}
             />
             {/* minPlaytime inputs use `defaultValue` (uncontrolled) which lets the user type freely without re-rendering on every keystroke */}
             <input

@@ -21,13 +21,13 @@ export const dynamic = 'force-dynamic';
 export default async function StorefrontPage({
   searchParams,
 }: {
-  searchParams: Promise<{ [key: string]: string | undefined }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const params = await searchParams;
 
   const page = Number(params.page ?? '1');
   const query = {
-    genre: params.genre,
+    genres: params.genre ? (Array.isArray(params.genre) ? params.genre : [params.genre]) : [],
     minPlaytime: params.minPlaytime ? Number(params.minPlaytime) : undefined,
     sort: params.sort as 'name' | 'playtime' | 'lastPlayed' | undefined,
     page,

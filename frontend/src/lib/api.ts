@@ -26,8 +26,8 @@ const BASE_URL = typeof window === 'undefined'
  */
 export async function getLibrary(query: LibraryQuery = {}): Promise<PagedResult<GameDto>> {
     const params = new URLSearchParams();
-    if (query.genre) {
-        params.set('genre', query.genre);
+    if (query.genres && query.genres.length > 0) {
+        query.genres.forEach(g => params.append('genre', g));
     }
     if (query.minPlaytime !== undefined) {
         params.set('minPlaytime', String(query.minPlaytime));
