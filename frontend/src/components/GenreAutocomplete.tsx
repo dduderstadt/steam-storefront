@@ -23,7 +23,7 @@ export default function GenreAutocomplete({ genres, selected, onChange }: GenreA
 
     // Derives the matching genres from the full list every render. Empty input = empty list (no dropdown with everything shown)
     // Case-insensitive prefix match - "ac" matches "Action"
-    const filtered = input.length > 0 ? genres.filter(g => !selected.includes(g) && g.toLowerCase().startsWith(input.toLowerCase())) : [];
+    const filtered = input.length > 0 ? genres.filter(g => !selected.includes(g) && g.toLowerCase().startsWith(input.toLowerCase())) : genres.filter(g => !selected.includes(g));
 
     // Registers a mousedown listener on the document so clicking anywhere outside the
     // component closes the dropdown. Returns a cleanup function to remove the listener.
@@ -120,7 +120,7 @@ export default function GenreAutocomplete({ genres, selected, onChange }: GenreA
                     value={input}
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
-                    onFocus={() => input.length > 0 && setOpen(true)}
+                    onFocus={() => setOpen(true)}
                     className="flex-1 min-w-20 text-sm outline-none bg-transparent py-0.5" />
             </div>
             {open && filtered.length > 0 && (

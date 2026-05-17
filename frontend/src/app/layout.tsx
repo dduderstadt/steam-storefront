@@ -47,7 +47,7 @@ export default function RootLayout({
               className="font-semibold text-zinc-900 dark:text-zinc-100
    hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              My Library
+              Steam Library
             </Link>
             <Link
               href="/stats"

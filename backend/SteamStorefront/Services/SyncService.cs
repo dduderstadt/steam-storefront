@@ -20,6 +20,7 @@ public class SyncService(
     private readonly string _steamId = config["Steam:SteamId"]
         ?? throw new InvalidOperationException("Steam:SteamId is not configured.");
 
+    private static readonly SemaphoreSlim _syncLock = new(1, 1); // Ensures only one sync runs at a time.
     /// <summary>
     /// Fetches the owner's current game list from Steam and upserts each entry.
     /// Existing games get playtime and LastPlayed updated via a bulk ExecuteUpdateAsync
@@ -28,58 +29,69 @@ public class SyncService(
     /// </summary>
     public async Task<DateTime> SyncAsync(CancellationToken ct = default)
     {
-        logger.LogInformation("Starting library sync for Steam ID {SteamId}", _steamId);
-
-        var ownedGames = await steamApi.GetOwnedGamesAsync(_steamId, ct);
-        // Pre-load all existing AppIds into a HashSet for O(1) lookup inside the loop.
-        var existingAppIds = await db.Games.Select(g => g.AppId).ToHashSetAsync(ct);
-        var now = DateTime.UtcNow;
-
-        foreach (var owned in ownedGames)
+        if (!await _syncLock.WaitAsync(0, ct))
         {
-            ct.ThrowIfCancellationRequested();
-
-            // Steam returns last_played as a Unix timestamp; convert to UTC DateTime.
-            var lastPlayed = owned.RtimeLastPlayed.HasValue
-                ? DateTimeOffset.FromUnixTimeSeconds(owned.RtimeLastPlayed.Value).UtcDateTime
-                : (DateTime?)null;
-
-            if (existingAppIds.Contains(owned.AppId))
-            {
-                // Update only mutable fields — skip detail fetch, it's already been done.
-                await db.Games
-                    .Where(g => g.AppId == owned.AppId)
-                    .ExecuteUpdateAsync(s => s
-                        .SetProperty(g => g.PlaytimeForever, owned.PlaytimeForever)
-                        .SetProperty(g => g.PlaytimeTwoWeeks, owned.PlaytimeTwoWeeks)
-                        .SetProperty(g => g.LastPlayed, lastPlayed)
-                        .SetProperty(g => g.LastSyncedAt, now), ct);
-            }
-            else
-            {
-                // New game — fetch store details (name, description, image, genres).
-                // Falls back to the owned-game name if the detail call returns null.
-                var details = await steamApi.GetGameDetailsAsync(owned.AppId, ct);
-                db.Games.Add(new Game
-                {
-                    AppId = owned.AppId,
-                    Name = details?.Name ?? owned.Name,
-                    Description = details?.ShortDescription,
-                    HeaderImageUrl = details?.HeaderImage,
-                    Genres = details?.Genres ?? [],
-                    PlaytimeForever = owned.PlaytimeForever,
-                    PlaytimeTwoWeeks = owned.PlaytimeTwoWeeks,
-                    LastPlayed = lastPlayed,
-                    FirstSyncedAt = now,
-                    LastSyncedAt = now
-                });
-            }
+            throw new InvalidOperationException("A sync is already in progress.");
         }
+        try
+        {
+            logger.LogInformation("Starting library sync for Steam ID {SteamId}", _steamId);
 
-        await db.SaveChangesAsync(ct);
-        await stats.RecomputeAsync(ct);
+            var ownedGames = await steamApi.GetOwnedGamesAsync(_steamId, ct);
+            // Pre-load all existing AppIds into a HashSet for O(1) lookup inside the loop.
+            var existingAppIds = await db.Games.Select(g => g.AppId).ToHashSetAsync(ct);
+            var now = DateTime.UtcNow;
 
-        logger.LogInformation("Sync complete — {Count} games processed", ownedGames.Count);
-        return now;
+            foreach (var owned in ownedGames)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                // Steam returns last_played as a Unix timestamp; convert to UTC DateTime.
+                var lastPlayed = owned.RtimeLastPlayed.HasValue
+                    ? DateTimeOffset.FromUnixTimeSeconds(owned.RtimeLastPlayed.Value).UtcDateTime
+                    : (DateTime?)null;
+
+                if (existingAppIds.Contains(owned.AppId))
+                {
+                    // Update only mutable fields — skip detail fetch, it's already been done.
+                    await db.Games
+                        .Where(g => g.AppId == owned.AppId)
+                        .ExecuteUpdateAsync(s => s
+                            .SetProperty(g => g.PlaytimeForever, owned.PlaytimeForever)
+                            .SetProperty(g => g.PlaytimeTwoWeeks, owned.PlaytimeTwoWeeks)
+                            .SetProperty(g => g.LastPlayed, lastPlayed)
+                            .SetProperty(g => g.LastSyncedAt, now), ct);
+                }
+                else
+                {
+                    // New game — fetch store details (name, description, image, genres).
+                    // Falls back to the owned-game name if the detail call returns null.
+                    var details = await steamApi.GetGameDetailsAsync(owned.AppId, ct);
+                    db.Games.Add(new Game
+                    {
+                        AppId = owned.AppId,
+                        Name = details?.Name ?? owned.Name,
+                        Description = details?.ShortDescription,
+                        HeaderImageUrl = details?.HeaderImage,
+                        Genres = details?.Genres ?? [],
+                        PlaytimeForever = owned.PlaytimeForever,
+                        PlaytimeTwoWeeks = owned.PlaytimeTwoWeeks,
+                        LastPlayed = lastPlayed,
+                        FirstSyncedAt = now,
+                        LastSyncedAt = now
+                    });
+                }
+            }
+
+            await db.SaveChangesAsync(ct);
+            await stats.RecomputeAsync(ct);
+
+            logger.LogInformation("Sync complete — {Count} games processed", ownedGames.Count);
+            return now;
+        }
+        finally
+        {
+            _syncLock.Release();
+        }
     }
 }

@@ -18,7 +18,15 @@ public class SyncController(ISyncService sync) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> TriggerSync(CancellationToken ct)
     {
-        var syncedAt = await sync.SyncAsync(ct);
-        return Ok(new { syncedAt });
+        try
+        {
+            var syncedAt = await sync.SyncAsync(ct);
+            return Ok(new { syncedAt });
+
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
     }
 }
