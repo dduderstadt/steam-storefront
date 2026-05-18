@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'shared.cloudflare.steamstatic.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'avatars.steamstatic.com',
+      },
     ],
   },
 };

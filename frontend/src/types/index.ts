@@ -70,3 +70,11 @@ export interface LibraryQuery {
     page?: number;
     pageSize?: number;
 }
+
+/**
+ * Object type for the player summary data fetched from the store profile endpoint.
+ */
+export interface PlayerSummary {
+    displayName: string;
+    avatarUrl: string | null;
+}

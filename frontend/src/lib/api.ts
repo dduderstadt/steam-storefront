@@ -5,7 +5,7 @@
  * they use internal hostnames.
  */
 
-import type { GameDto, PagedResult, StatsDto, LibraryQuery } from "@/types";
+import type { GameDto, PagedResult, StatsDto, LibraryQuery, PlayerSummary } from "@/types";
 
 /**
  * Server-side rendering uses API_BASE_URL (the internal Docker hostname http://backend:8080),
@@ -95,6 +95,18 @@ export async function getGenres(): Promise<string[]> {
     const resp = await fetch(`${BASE_URL}/api/v1/library/genres`, { cache: 'no-store' });
     if (!resp.ok) {
         throw new Error('Failed to fetch genres');
+    }
+    return resp.json();
+}
+
+/**
+ * Fetches the player's profile information (display name and avatar URL) from the backend.
+ * @returns The player's profile information as JSON.
+ */
+export async function getProfile(): Promise<PlayerSummary> {
+    const resp = await fetch(`${BASE_URL}/api/v1/profile`, { cache: 'no-store' });
+    if (!resp.ok) {
+        throw new Error('Failed to fetch profile');
     }
     return resp.json();
 }

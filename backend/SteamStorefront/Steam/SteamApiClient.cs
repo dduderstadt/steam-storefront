@@ -76,4 +76,33 @@ public class SteamApiClient(HttpClient http, IConfiguration config, ILogger<Stea
             return null;
         }
     }
+
+    /// <summary>
+    /// Fetches the player's display name and avatar URL from the store profile endpoint.
+    /// </summary>
+    /// <returns>The player associated to the steamId or null</returns>
+    public async Task<PlayerSummary?> GetPlayerSummaryAsync(string steamId, CancellationToken ct = default)
+    {
+        try
+        {
+            var url = $"{BaseUrl}/ISteamUser/GetPlayerSummaries/v2/?key={_apiKey}&steamids={steamId}";
+            var response = await http.GetStringAsync(url, ct);
+            var player = JsonNode.Parse(response)?["response"]?["players"]?[0];
+
+            if (player is null)
+            {
+                return null;
+            }
+
+            return new PlayerSummary(
+                player["personaname"]!.GetValue<string>(),
+                player["avatarfull"]?.GetValue<string>()
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to fetch player summary for {SteamId}", steamId);
+            return null;
+        }
+    }
 }

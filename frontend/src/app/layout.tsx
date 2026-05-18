@@ -1,6 +1,8 @@
+import { getProfile } from "@/lib/api";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import Image from "next/image";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,11 +27,13 @@ export const metadata: Metadata = {
  * @param children Whatever page is currently active - passed in by Next.js automatically. This is the main content of each page, rendered below the nav bar.
  * @returns The full HTML structure of the page, including the <html> and <body> tags, with a nav bar and the active page content. The fonts are loaded here and applied globally via CSS variables.
  */
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const profile = await getProfile();
+
   return (
     //Next.js loads these fonts from Google at build time and injects them as CSS custom properties (--font-geist-sans, --font-geist-mono)
     // The variables are then applied to the <html> element so Tailwind can use them via font-sans and font-mono.
@@ -47,7 +51,12 @@ export default function RootLayout({
               className="font-semibold text-zinc-900 dark:text-zinc-100
    hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              Steam Library
+              <div className="flex items-center gap-2">
+                {profile.avatarUrl && (
+                  <Image src={profile.avatarUrl} alt={profile.displayName} width={32} height={32} className="rounded-full" />
+                )}
+                {profile.displayName}&apos;s Library
+              </div>
             </Link>
             <Link
               href="/stats"

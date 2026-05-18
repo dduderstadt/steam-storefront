@@ -19,4 +19,10 @@ public interface ISteamApiClient
     /// Rate-limited internally: Steam's appdetails endpoint has no bulk variant.
     /// </summary>
     Task<GameDetails?> GetGameDetailsAsync(int appId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Fetches the player's display name and avatar URL from the store profile endpoint.
+    /// </summary>
+    /// <param name="steamId">The steamId of the user</param>
+    Task<PlayerSummary?> GetPlayerSummaryAsync(string steamId, CancellationToken ct = default);
 }
