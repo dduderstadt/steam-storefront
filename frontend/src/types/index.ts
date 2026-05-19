@@ -54,6 +54,9 @@ export interface GamePlaytimeStat {
 export interface StatsDto {
     totalGames: number;
     totalPlaytimeMinutes: number;
+    neverPlayedCount: number;
+    averagePlaytimeMinutes: number;
+    recentlyPlayedCount: number;
     topGames: GamePlaytimeStat[];
     playtimeByGenre: Record<string, number>;
     lastSyncedAt: string;

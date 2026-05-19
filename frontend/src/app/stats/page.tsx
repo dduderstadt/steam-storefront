@@ -63,7 +63,7 @@ export default function StatsPage() {
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-8">
                 Library Stats
             </h1>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-10">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
                 <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
                     <p className="text-sm text-zinc-500">Total Games</p>
                     <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">
@@ -80,6 +80,24 @@ export default function StatsPage() {
                     <p className="text-sm text-zinc-500">Last Synced</p>
                     <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mt-1">
                         {new Date(stats.lastSyncedAt).toLocaleString()}
+                    </p>
+                </div>
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
+                    <p className="text-sm text-zinc-500">Never Played</p>
+                    <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">
+                        {(stats.neverPlayedCount ?? 0).toLocaleString()}
+                    </p>
+                </div>
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
+                    <p className="text-sm text-zinc-500">Avg Playtime</p>
+                    <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">
+                        {formatPlaytime(stats.averagePlaytimeMinutes ?? 0)}
+                    </p>
+                </div>
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
+                    <p className="text-sm text-zinc-500">Played Recently</p>
+                    <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">
+                        {(stats.recentlyPlayedCount ?? 0).toLocaleString()}
                     </p>
                 </div>
             </div>

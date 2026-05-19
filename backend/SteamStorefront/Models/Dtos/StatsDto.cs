@@ -15,6 +15,9 @@ public record GamePlaytimeStat(int AppId, string Name, int PlaytimeMinutes);
 public record StatsDto(
 int TotalGames,
 int TotalPlaytimeMinutes,
+int NeverPlayedCount,
+int AveragePlaytimeMinutes,
+int RecentlyPlayedCount,
 Dictionary<string, int> PlaytimeByGenre,
 List<GamePlaytimeStat> TopGames,
 DateTime ComputedAt,

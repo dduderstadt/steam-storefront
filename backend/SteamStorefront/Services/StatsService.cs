@@ -61,9 +61,16 @@ public class StatsService(AppDbContext db, ICacheService cache, IConfiguration c
         // Use the most recent LastSyncedAt across all games as the snapshot's sync timestamp.
         var lastSyncedAt = games.Count > 0 ? games.Max(g => g.LastSyncedAt) : DateTime.UtcNow;
 
+        var neverPlayed = games.Count(g => g.PlaytimeForever == 0);
+        var averagePlaytime = games.Count > 0 ? games.Sum(g => g.PlaytimeForever) / games.Count : 0;
+        var recentlyPlayed = games.Count(g => g.PlaytimeTwoWeeks > 0);
+
         var dto = new StatsDto(
             TotalGames: games.Count,
             TotalPlaytimeMinutes: games.Sum(g => g.PlaytimeForever),
+            NeverPlayedCount: neverPlayed,
+            AveragePlaytimeMinutes: averagePlaytime,
+            RecentlyPlayedCount: recentlyPlayed,
             PlaytimeByGenre: playtimeByGenre,
             TopGames: topGames,
             ComputedAt: DateTime.UtcNow,
