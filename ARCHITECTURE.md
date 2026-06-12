@@ -87,6 +87,27 @@ A personal Steam library storefront that syncs game data from the Steam Web API 
 
 ---
 
+## Decision 6: Testing Strategy
+
+**Decision:** Integration tests run against a real PostgreSQL container (Testcontainers) rather than an in-memory database.
+
+**Alternative considered:** EF Core's InMemory provider — no Docker dependency, faster startup, simpler setup.
+
+**Why Testcontainers wins:**
+- The genre filter query uses a Postgres array `ANY` operation (`g.Genres.Any(genre => genres.Contains(genre))`), and the genres endpoint uses `SelectMany` which translates to `unnest`. Neither is supported by the InMemory provider — tests against InMemory would throw at runtime, not catch real bugs.
+- `ExecuteUpdateAsync` (bulk update in the sync job) is also unsupported by InMemory.
+- Tests that pass against InMemory but fail against Postgres are worse than no tests — they create false confidence.
+
+**How it works:**
+- A single `PostgreSqlContainer` (postgres:17) is shared across all integration test classes via an xUnit collection fixture (`IntegrationFixture`). The container starts once per test run, not once per test class.
+- `TestWebApplicationFactory` accepts an optional connection string. When provided it uses real Npgsql; when omitted (service-level unit tests) it falls back to InMemory for tests that don't touch Postgres-specific features.
+- EF Core migrations run automatically on first server start inside the factory, so tests always run against a schema-correct database.
+- Each test class clears relevant tables in `InitializeAsync` using `ExecuteDeleteAsync` to ensure isolation without restarting the container.
+
+**Tradeoff accepted:** Integration tests require Docker. `dotnet test` will fail without a running Docker daemon. This is documented in the README.
+
+---
+
 ## Known Limitations
 
 - **Single user:** The system is designed for one Steam account. Multi-user support would require per-user sync jobs, scoped cache keys, and auth — out of scope for v1.
