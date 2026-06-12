@@ -40,6 +40,7 @@ Deployable with a single `docker compose up`.
 | Cache | Redis |
 | Frontend | Next.js + TypeScript |
 | Styling | Tailwind CSS |
+| Testing | xUnit + Testcontainers |
 | Infra | Docker Compose |
 
 ## Getting Started
@@ -70,6 +71,16 @@ To stop:
 ```bash
 docker compose down        # stop containers
 docker compose down -v     # stop and wipe the database
+```
+
+To run the backend tests (requires Docker for Testcontainers):
+```bash
+cd backend && dotnet test
+```
+
+To run the frontend tests:
+```bash
+cd frontend && npm test
 ```
 
 ## Architecture

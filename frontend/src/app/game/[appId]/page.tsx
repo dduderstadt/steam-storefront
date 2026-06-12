@@ -2,20 +2,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getGame } from '@/lib/api';
-
-// TODO: extract to a shared utility (lib/utils.ts) - duplicated from GameCard.tsx
-/**
- * Formats playtime in minutes into a human-readable string.
- * @param minutes The playtime in minutes.
- * @returns The formatted playtime string.
- */
-function formatPlaytime(minutes: number): string {
-    const hours = Math.floor(minutes / 60);
-    if (hours < 1) {
-        return `${minutes}m`;
-    }
-    return `${hours.toLocaleString()}h`;
-}
+import { formatPlaytime } from '@/lib/utils';
 
 /**
  * SSR detail page for a single game. Fetches the game data server-side based on the `appId` from the URL, and renders a detailed view of the game.

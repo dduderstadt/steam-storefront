@@ -1,20 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { GameDto } from "@/types";
-
-/**
- * Steam's API returns playtime in minutes, so to display in a more user-friendly format (e.g. hours),
- * we can convert minutes to hours and format it accordingly.
- * @param minutes The total playtime in minutes from the Steam API.
- * @returns The formatted playtime string.
- */
-function formatPlaytime(minutes: number): string {
-    const hours = Math.floor(minutes / 60);
-    if (hours < 1) {
-        return `${minutes}m`;
-    }
-    return `${hours.toLocaleString()}h`;
-}
+import { formatPlaytime } from "@/lib/utils";
 
 /**
  * Renders a pure-presentational game card component.

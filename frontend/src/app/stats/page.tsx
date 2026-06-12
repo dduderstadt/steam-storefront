@@ -1,18 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { getStats } from '@/lib/api';
+import { formatPlaytime, getTopGenres } from '@/lib/utils';
 import type { StatsDto } from '@/types';
-
-// TODO: extract to lib/utils.ts - duplicated from GameCard.tsx and game/[appId]/page.tsx
-/**
- * Formats playtime in minutes into a human-readable string.
- * @param minutes The playtime in minutes.
- * @returns The formatted playtime string in hours - always.
- */
-function formatPlaytime(minutes: number): string {
-    const hours = Math.floor(minutes / 60);
-    return `${hours.toLocaleString()}h`;
-}
 
 /**
  * 'use client' makes this a CSR page (intentional to the SSR storefront).
@@ -49,10 +39,7 @@ export default function StatsPage() {
         );
     }
 
-    // topGenres sorts the genre map by playtime descending and takes the top 8.
-    const topGenres = Object.entries(stats.playtimeByGenre)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 8);
+    const topGenres = getTopGenres(stats.playtimeByGenre);
 
     // maxGenreMinutes is the largest value - used to calculate bar widths as a percentage so the top genre always fills 100% width
     // and others scale relative to it.
